@@ -11,7 +11,8 @@ Stanford COOL compiler implementation
 4. Optionally can use install ssh server and start remote development. (e.g. [VSCode](https://code.visualstudio.com/docs/remote/ssh)).
 
 ## Step 2 - Flex
-The initial Flex version inside Ubuntu is likely to be incompatible
-1. [Download v2.5.35 from here](https://src.fedoraproject.org/lookaside/pkgs/flex/flex-2.5.35.tar.bz2/10714e50cea54dc7a227e3eddcd44d57/)
-2. Unwrap by `tar -xf flex-2.5.35.tar.bz2`, cd to the directory.
-3. Then install by `./configure && make -j4 && sudo make install`.
+The initial Flex version inside Ubuntu is likely to be incompatible.
+1. Remove old version `sudo apt remove flex`.
+2. Download v2.5.35 from [here](https://src.fedoraproject.org/lookaside/pkgs/flex/flex-2.5.35.tar.bz2/10714e50cea54dc7a227e3eddcd44d57/)
+3. Unwrap by `tar -xf flex-2.5.35.tar.bz2`, cd to the directory.
+4. Then install by `./configure && make -j4 && sudo make install`.
