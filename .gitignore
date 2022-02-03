@@ -34,4 +34,7 @@
 build/
 .vscode/
 cmake-build-debug/
-.idea
+cmake-build-debug-remote/
+.idea/
+tmp/
+.DS_Store
