@@ -49,9 +49,13 @@ extern YYSTYPE cool_yylval;
  * Define names for regular expressions here.
  */
 
-DARROW          =>
-
 %%
+
+ /*
+  * White space
+  */
+
+[\n\f\r\t\v ]+  {}
 
  /*
   *  Nested comments
@@ -61,13 +65,56 @@ DARROW          =>
  /*
   *  The multiple-character operators.
   */
-{DARROW}		{ return (DARROW); }
 
- /*
-  * Keywords are case-insensitive except for the values true and false,
-  * which must begin with a lower-case letter.
+"=>"		                    { return DARROW; }
+"<-"                        { return ASSIGN; }
+"<="                        { return LE;     }
+
+ /* 
+  *  The single-character operators.
   */
 
+"{"			{ return '{'; }
+"}"			{ return '}'; }
+"("			{ return '('; }
+")"			{ return ')'; }
+"~"			{ return '~'; }
+","			{ return ','; }
+";"			{ return ';'; }
+":"			{ return ':'; }
+"+"			{ return '+'; }
+"-"			{ return '-'; }
+"*"			{ return '*'; }
+"/"			{ return '/'; }
+"%"			{ return '%'; }
+"."			{ return '.'; }
+"<"			{ return '<'; }
+"="			{ return '='; }
+"@"			{ return '@'; }
+
+ /*
+  *  Keywords are case-insensitive except for the values true and false,
+  *  which must begin with a lower-case letter.
+  */
+
+(?i:class)                { return CLASS; }
+(?i:else)                 { return ELSE; }
+(?i:fi)                   { return FI; }
+(?i:if)                   { return IF; }
+(?i:in)                   { return IN; }
+(?i:inherists)            { return INHERITS; }
+(?i:let)                  { return LET; }
+(?i:loop)                 { return LOOP; }
+(?i:pool)                 { return POOL; }
+(?i:then)                 { return THEN; }
+(?i:while)                { return WHILE; }
+(?i:case)                 { return CASE; }
+(?i:esac)                 { return ESAC; }
+(?i:of)                   { return OF; }
+(?i:new)                  { return NEW; }
+(?i:not)                  { return NOT; }
+(?i:isvoid)               { return ISVOID; }
+(t(?i:rue))|(f(?i:alse))  { return BOOL_CONST; }
 
  /*
   *  String constants (C syntax)
@@ -75,6 +122,29 @@ DARROW          =>
   *  \n \t \b \f, the result is c.
   *
   */
+
+
+ /*
+  *  Identififers
+  */
+  
+[A-Z][a-zA-Z0-9_]*        {
+  cool_yylval.symbol = idtable.add_string(yytext);
+  return TYPEID; 
+}               
+[a-z][a-zA-Z0-9_]*        {
+  cool_yylval.symbol = idtable.add_string(yytext);
+  return OBJECTID; 
+}
+
+ /*
+  *   Integer constants
+  */ 
+
+[0-9]+                    { 
+  cool_yylval.symbol = inttable.add_string(yytext);
+  return INT_CONST; 
+}
 
 
 %%
