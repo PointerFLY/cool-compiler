@@ -43,11 +43,16 @@ extern YYSTYPE cool_yylval;
  *  Add Your own definitions here
  */
 
+int comment_level = 0;
+
 %}
 
 /*
  * Define names for regular expressions here.
  */
+
+%x LINE_COMMENT
+%x BLOCK_COMMENT
 
 %%
 
@@ -55,12 +60,39 @@ extern YYSTYPE cool_yylval;
   * White space
   */
 
-[\n\f\r\t\v ]+  {}
+[\n]                      { curr_lineno += 1; }
+[\f\r\t\v ]+              {}
 
  /*
   *  Nested comments
   */
 
+"--"                        { BEGIN LINE_COMMENT; }
+<LINE_COMMENT>\n            { curr_lineno += 1; BEGIN INITIAL; }
+<LINE_COMMENT>.             {}
+
+"(*"                        {
+    comment_level += 1;
+    BEGIN BLOCK_COMMENT; 
+}
+"*)" {
+  cool_yylval.error_msg = "Unpaired right comment symbol";
+  return (ERROR);
+}
+<BLOCK_COMMENT>"(*"         { comment_level += 1; }
+<BLOCK_COMMENT>"*)"         {
+  comment_level -= 1;
+  if (comment_level == 0) {
+    BEGIN INITIAL;
+  }
+}
+<BLOCK_COMMENT>\n           { curr_lineno += 1; }
+<BLOCK_COMMENT>.            {}
+<BLOCK_COMMENT><<EOF>>	    {
+  cool_yylval.error_msg = "Unpaired left comment symbol";
+  BEGIN INITIAL; 
+  return (ERROR);
+}
 
  /*
   *  The multiple-character operators.
@@ -114,7 +146,16 @@ extern YYSTYPE cool_yylval;
 (?i:new)                  { return NEW; }
 (?i:not)                  { return NOT; }
 (?i:isvoid)               { return ISVOID; }
-(t(?i:rue))|(f(?i:alse))  { return BOOL_CONST; }
+
+t(?i:rue)                 {
+  cool_yylval.boolean = 1;
+  return BOOL_CONST; 
+}
+
+f(?i:alse)                {
+  cool_yylval.boolean = 0;
+  return BOOL_CONST;
+}
 
  /*
   *  String constants (C syntax)
@@ -138,7 +179,7 @@ extern YYSTYPE cool_yylval;
 }
 
  /*
-  *   Integer constants
+  *  Integer constants
   */ 
 
 [0-9]+                    { 
@@ -146,5 +187,13 @@ extern YYSTYPE cool_yylval;
   return INT_CONST; 
 }
 
+ /*
+  *  Error 
+  */
+
+.                         {
+  cool_yylval.error_msg = strdup(yytext);
+  return ERROR;
+}
 
 %%
