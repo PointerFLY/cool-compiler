@@ -44,6 +44,9 @@ extern YYSTYPE cool_yylval;
  */
 
 int comment_level = 0;
+int string_len = 0;
+bool string_contains_null = false;
+bool string_too_long = false;
 
 %}
 
@@ -53,6 +56,7 @@ int comment_level = 0;
 
 %x LINE_COMMENT
 %x BLOCK_COMMENT
+%x STRING
 
 %%
 
@@ -76,7 +80,7 @@ int comment_level = 0;
     BEGIN BLOCK_COMMENT; 
 }
 "*)" {
-  cool_yylval.error_msg = "Unpaired right comment symbol";
+  cool_yylval.error_msg = "Unmatched *)";
   return (ERROR);
 }
 <BLOCK_COMMENT>"(*"         { comment_level += 1; }
@@ -89,7 +93,7 @@ int comment_level = 0;
 <BLOCK_COMMENT>\n           { curr_lineno += 1; }
 <BLOCK_COMMENT>.            {}
 <BLOCK_COMMENT><<EOF>>	    {
-  cool_yylval.error_msg = "Unpaired left comment symbol";
+  cool_yylval.error_msg = "EOF in comment";
   BEGIN INITIAL; 
   return (ERROR);
 }
@@ -164,6 +168,66 @@ f(?i:alse)                {
   *
   */
 
+\"                        {
+  memset(string_buf, 0, sizeof(string_buf));
+  string_len = 0;
+  string_too_long = false;
+  string_contains_null = false;
+  BEGIN STRING; 
+}
+<STRING>\"                {
+  if (string_too_long) {
+    cool_yylval.error_msg = "String constant too long";
+    BEGIN INITIAL;
+    return ERROR;
+  } 
+  if (string_contains_null) {
+    cool_yylval.error_msg = "String contains null character";
+    BEGIN INITIAL;
+    return ERROR;
+  }
+
+  cool_yylval.symbol = stringtable.add_string(string_buf);
+  BEGIN INITIAL;
+  return STR_CONST;
+}
+<STRING><<EOF>>	          {
+  cool_yylval.error_msg = "EOF in string constant";
+  BEGIN INITIAL;
+  return (ERROR);
+}
+<STRING>\\\n              { curr_lineno += 1; }
+<STRING>\n                {
+  curr_lineno += 1;
+  cool_yylval.error_msg = "Unterminated string constant";
+  BEGIN INITIAL; // Assume the programmer forget the close-quote
+  return ERROR;
+}
+<STRING>\\.               {
+  if (string_len >= MAX_STR_CONST) {
+    string_too_long = true;
+  } else {
+    switch (yytext[1]) {
+      case 'b': string_buf[string_len++] = '\b'; break;
+      case 't': string_buf[string_len++] = '\t'; break;
+      case 'n': string_buf[string_len++] = '\n'; break;
+      case 'f': string_buf[string_len++] = '\f'; break;
+      case '0': {
+        string_buf[string_len++] = '\0';
+        string_contains_null = true;
+        break;
+      }
+      default: string_buf[string_len++] = yytext[1];
+    }
+  }
+}
+<STRING>.                 {
+  if (string_len >= MAX_STR_CONST) {
+    string_too_long = true;
+  } else {
+    string_buf[string_len++] = yytext[0];
+  }
+}
 
  /*
   *  Identififers
