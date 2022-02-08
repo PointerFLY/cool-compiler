@@ -138,7 +138,7 @@ bool string_too_long = false;
 (?i:fi)                   { return FI; }
 (?i:if)                   { return IF; }
 (?i:in)                   { return IN; }
-(?i:inherists)            { return INHERITS; }
+(?i:inherits)             { return INHERITS; }
 (?i:let)                  { return LET; }
 (?i:loop)                 { return LOOP; }
 (?i:pool)                 { return POOL; }
